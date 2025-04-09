@@ -7,22 +7,52 @@ This file creates your application.
 
 from flask import render_template, request, jsonify, send_file
 import os
-from app import app #import the app from init.py
+from app import app, db
+from .models import Movie
+from .forms import MovieForm
+from werkzeug.utils import secure_filename
 
-###
-# Routing for your application.
-###
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/')
 def index():
     return jsonify(message="This is the beginning of our API")
 
-###
-# The functions below should be applicable to all Flask apps.
-###
+@app.route('/api/v1/movies', methods=['POST'])
+def movies():
+    form = MovieForm()
 
-# Here we define a function to collect form errors from Flask-WTF
-# which we can later use
+    if form.validate_on_submit():
+        title = form.title.data
+        description = form.description.data
+        poster = form.poster.data
+
+        if poster and allowed_file(poster.filename):
+            filename = secure_filename(poster.filename)
+            poster.save(os.path.join(app.root_path, UPLOAD_FOLDER, filename))
+
+            new_movie = Movie(title=title, description=description, poster=filename)
+            db.session.add(new_movie)
+            db.session.commit()
+
+            return jsonify({
+                "message": "Movie Successfully added",
+                "title": title,
+                "poster": filename,
+                "description": description
+            }), 201  # 201 Created
+
+        else:
+            return jsonify({"errors": ["Invalid poster file"]}), 400
+
+    else:
+        return jsonify({"errors": form_errors(form)}), 400
+
 def form_errors(form):
     error_messages = []
     """Collects form errors"""
