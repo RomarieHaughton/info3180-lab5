@@ -5,10 +5,9 @@ Werkzeug Documentation:  https://werkzeug.palletsprojects.com/
 This file creates your application.
 """
 
-from app import app
 from flask import render_template, request, jsonify, send_file
 import os
-
+from app import app #import the app from init.py
 
 ###
 # Routing for your application.
@@ -17,7 +16,6 @@ import os
 @app.route('/')
 def index():
     return jsonify(message="This is the beginning of our API")
-
 
 ###
 # The functions below should be applicable to all Flask apps.
@@ -31,9 +29,9 @@ def form_errors(form):
     for field, errors in form.errors.items():
         for error in errors:
             message = u"Error in the %s field - %s" % (
-                    getattr(form, field).label.text,
-                    error
-                )
+                getattr(form, field).label.text,
+                error
+            )
             error_messages.append(message)
 
     return error_messages
@@ -42,8 +40,7 @@ def form_errors(form):
 def send_text_file(file_name):
     """Send your static text file."""
     file_dot_text = file_name + '.txt'
-    return app.send_static_file(file_dot_text)
-
+    return send_file(os.path.join(app.static_folder, file_dot_text))
 
 @app.after_request
 def add_header(response):
@@ -55,7 +52,6 @@ def add_header(response):
     response.headers['X-UA-Compatible'] = 'IE=Edge,chrome=1'
     response.headers['Cache-Control'] = 'public, max-age=0'
     return response
-
 
 @app.errorhandler(404)
 def page_not_found(error):
